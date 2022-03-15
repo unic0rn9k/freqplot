@@ -1,0 +1,10 @@
+[package]
+name = "freqplot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sfft = { git = 'https://github.com/unic0rn9k/sfft' }
+minimp3 = '0.5.*'
+plotly = { version = "0.7.*", features = ["kaleido"] }
+itertools-num = '0.1.*'

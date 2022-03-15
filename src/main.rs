@@ -11,8 +11,8 @@ fn plot_vector(v: &[[f32; 2]; LEN], sample_rate: f64, name: &str) {
     let t: Vec<f64> = linspace(0., sample_rate, LEN).collect();
     let len = 500;
 
-    let trace_re = Scatter::new(t.clone(), v[0..len].iter().map(|n| n[0]));
-    let trace_im = Scatter::new(t, v[0..len].iter().map(|n| n[1]));
+    let trace_re = Scatter::new(t.clone(), v[0..len].iter().map(|n| n[0])).name("re");
+    let trace_im = Scatter::new(t, v[0..len].iter().map(|n| n[1])).name("im");
 
     let mut plot = Plot::new();
     plot.add_trace(trace_re);

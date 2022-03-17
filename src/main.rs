@@ -23,7 +23,7 @@ fn plot_vector(v: &[[f32; 2]; LEN], sample_rate: f64, name: &str) {
 }
 
 fn main() {
-    let mut decoder = Decoder::new(File::open("440ishhz.mp3").unwrap());
+    let mut decoder = Decoder::new(File::open("440hz_ekstra.mp3").unwrap());
 
     let mut plot_nr = 0;
     let mut samples = 0;
@@ -39,7 +39,6 @@ fn main() {
                 ..
             }) => {
                 assert_eq!(channels, 1);
-                //println!("{} samples, with sample rate {}", data.len(), sample_rate);
 
                 for n in 0..data.len() {
                     buffer[samples] = re(data[n] as f32);

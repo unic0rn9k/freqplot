@@ -8,3 +8,4 @@ sfft = { git = 'https://github.com/unic0rn9k/sfft' }
 minimp3 = '0.5.*'
 plotly = { version = "0.7.*", features = ["kaleido"] }
 itertools-num = '0.1.*'
+image = '0.24.*'

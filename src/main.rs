@@ -20,6 +20,7 @@ fn plot_vector(v: &[[f32; 2]; LEN], sample_rate: f64, name: &str) {
     let layout = Layout::new().height(300);
     plot.set_layout(layout);
     plot.save(name, ImageFormat::PNG, 1024, 680, 1.0);
+    //plot.show();
 }
 
 fn main() {
@@ -28,7 +29,7 @@ fn main() {
     let mut plot_nr = 0;
     let mut samples = 0;
 
-    let mut buffer = [re(0f32); LEN];
+    let mut buffer = vec![re(0f32); LEN * 2];
 
     loop {
         match decoder.next_frame() {
@@ -41,22 +42,28 @@ fn main() {
                 assert_eq!(channels, 1);
 
                 for n in 0..data.len() {
-                    buffer[samples] = re(data[n] as f32);
-                    samples += 1;
-                    if samples >= LEN {
-                        println!("Generating new plot...");
+                    buffer[samples % LEN] = re(data[n] as f32);
+                    buffer[samples % LEN + LEN] = re(data[n] as f32);
+
+                    if samples / LEN >= 2 {
+                        println!("Generating plots/{plot_nr}.png");
+
+                        let sample: &[Complex<f32>; LEN] =
+                            unsafe { transmute(&buffer[samples % LEN]) };
+
+                        let buffer2 = fft(sample);
+
                         unsafe {
-                            buffer = fft::<LEN>(&buffer);
                             plot_vector(
-                                transmute(&buffer),
+                                transmute(&buffer2),
                                 sample_rate as f64,
                                 &format!("plots/{}", plot_nr),
                             )
                         };
                         plot_nr += 1;
-                        samples = 0;
-                        buffer = [re(0f32); LEN];
                     }
+
+                    samples += 1;
                 }
             }
             Err(Error::Eof) => return (),

@@ -11,7 +11,7 @@ fn main() {
 
     let mut decoder = Decoder::new(File::open(input_file.clone()).unwrap());
 
-    let mut plot_nr = 0;
+    let mut row_nr = 0;
     let mut samples = 0;
 
     let mut buffer = vec![re(0f32); LEN * 2];
@@ -31,8 +31,8 @@ fn main() {
                     buffer[samples % LEN] = re(data[data_idx] as f32);
                     buffer[samples % LEN + LEN] = re(data[data_idx] as f32);
 
-                    if samples / LEN >= 2 {
-                        println!("Generating row {plot_nr}...");
+                    if samples / LEN >= 2 && samples % 10 == 0 {
+                        println!("Generating row {row_nr}");
 
                         let sample: &[Complex<f32>; LEN] =
                             unsafe { transmute(&buffer[samples % LEN]) };
@@ -47,11 +47,11 @@ fn main() {
                         }
 
                         sound_map.push(row_buffer.to_vec());
-                        plot_nr += 1;
+                        row_nr += 1;
                     }
 
                     samples += 1;
-                    if plot_nr > 1000 {
+                    if row_nr > 4000 {
                         break 'outer;
                     }
                 }
@@ -61,7 +61,7 @@ fn main() {
         }
     }
 
-    println!("Generating and saving plot...");
+    println!("Generating plot");
 
     use plotly::common::{ColorScale, ColorScalePalette, Title};
     use plotly::contour::Contours;
@@ -70,11 +70,18 @@ fn main() {
     let trace = HeatMap::new_z(sound_map);
     let mut plot = Plot::new();
     plot.add_trace(trace);
-    plot.save(
-        format!("plots/{input_file}.png"),
-        plotly::ImageFormat::PNG,
-        1024,
-        680,
-        1.0,
-    );
+
+    if var("HTML_PLOT").is_ok() {
+        println!("Showing plot");
+        plot.show()
+    } else {
+        println!("Saving plot");
+        plot.save(
+            format!("plots/{input_file}.png"),
+            plotly::ImageFormat::PNG,
+            1920,
+            1080,
+            1.0,
+        );
+    }
 }

@@ -1,30 +1,15 @@
 use minimp3::{Decoder, Error, Frame};
 use sfft::*;
-use std::{fs::File, mem::transmute};
+use std::{env::var, fs::File, mem::transmute};
 
 const LEN: usize = 2usize.pow(14);
-
-fn plot_vector(v: &[[f32; 2]; LEN], sample_rate: f64, name: &str) {
-    use itertools_num::*;
-    use plotly::*;
-
-    let t: Vec<f64> = linspace(0., sample_rate, LEN).collect();
-    let len = 500;
-
-    let trace_re = Scatter::new(t.clone(), v[0..len].iter().map(|n| n[0] / LEN as f32)).name("re");
-    let trace_im = Scatter::new(t, v[0..len].iter().map(|n| n[1] / LEN as f32)).name("im");
-
-    let mut plot = Plot::new();
-    plot.add_trace(trace_re);
-    plot.add_trace(trace_im);
-    let layout = Layout::new().height(300);
-    plot.set_layout(layout);
-    plot.save(name, ImageFormat::PNG, 1024, 680, 1.0);
-    //plot.show();
-}
+const PLOT_X_LEN: usize = 1000;
 
 fn main() {
-    let mut decoder = Decoder::new(File::open("data/stemmegaffel/440hz_ekstra.mp3").unwrap());
+    let input_file =
+        var("AUDIO_FILE").expect("Expected AUDIO_FILE to contain path to audio file to plot");
+
+    let mut decoder = Decoder::new(File::open(input_file.clone()).unwrap());
 
     let mut plot_nr = 0;
     let mut samples = 0;
@@ -54,18 +39,10 @@ fn main() {
 
                         let mut buffer2 = fft(sample);
 
-                        //unsafe {
-                        //    plot_vector(
-                        //        transmute(&buffer2),
-                        //        sample_rate as f64,
-                        //        &format!("plots/{}", plot_nr),
-                        //    )
-                        //};
-
-                        let mut row_buffer = [0.; 1000];
+                        let mut row_buffer = [0.; PLOT_X_LEN];
 
                         for n in 0..LEN {
-                            row_buffer[(n * sample_rate as usize / LEN).min(999)] +=
+                            row_buffer[(n * sample_rate as usize / LEN).min(PLOT_X_LEN - 1)] +=
                                 buffer2[n].re / LEN as f32;
                         }
 
@@ -84,6 +61,8 @@ fn main() {
         }
     }
 
+    println!("Generating and saving plot...");
+
     use plotly::common::{ColorScale, ColorScalePalette, Title};
     use plotly::contour::Contours;
     use plotly::{Contour, HeatMap, Layout, Plot};
@@ -91,5 +70,11 @@ fn main() {
     let trace = HeatMap::new_z(sound_map);
     let mut plot = Plot::new();
     plot.add_trace(trace);
-    plot.save("soundmap.png", plotly::ImageFormat::PNG, 1024, 680, 1.0);
+    plot.save(
+        format!("plots/{input_file}.png"),
+        plotly::ImageFormat::PNG,
+        1024,
+        680,
+        1.0,
+    );
 }

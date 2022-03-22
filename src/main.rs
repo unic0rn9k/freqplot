@@ -91,5 +91,5 @@ fn main() {
     let trace = HeatMap::new_z(sound_map);
     let mut plot = Plot::new();
     plot.add_trace(trace);
-    plot.save("soundmap.png", ImageFormat::PNG, 1024, 680, 1.0);
+    plot.save("soundmap.png", plotly::ImageFormat::PNG, 1024, 680, 1.0);
 }

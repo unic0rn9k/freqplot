@@ -1,3 +1,5 @@
+#!/usr/bin/julia
+
 using CSV
 using DataFrames
 using Statistics

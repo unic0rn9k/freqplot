@@ -1,5 +1,6 @@
 use minimp3::{Decoder, Error, Frame};
 use sfft::*;
+use std::io::Write;
 use std::{env::var, fs::File, mem::transmute};
 
 const LEN: usize = 2usize.pow(14);
@@ -11,11 +12,13 @@ fn main() {
 
     let mut decoder = Decoder::new(File::open(input_file.clone()).unwrap());
 
-    let mut row_nr = 0;
     let mut samples = 0;
 
     let mut buffer = vec![re(0f32); LEN * 2];
     let mut sound_map: Vec<Vec<f32>> = Vec::new();
+    let mut peak_freq = vec![];
+
+    println!("Transforming audio data");
 
     'outer: loop {
         match decoder.next_frame() {
@@ -32,28 +35,29 @@ fn main() {
                     buffer[samples % LEN + LEN] = re(data[data_idx] as f32);
 
                     if samples / LEN >= 2 && samples % 10 == 0 {
-                        println!("Generating row {row_nr}");
-
                         let sample: &[Complex<f32>; LEN] =
                             unsafe { transmute(&buffer[samples % LEN]) };
 
-                        let mut buffer2 = fft(sample);
+                        let buffer2 = fft(sample);
 
                         let mut row_buffer = [0.; PLOT_X_LEN];
+                        let mut row_max = 0;
 
-                        for n in 0..LEN {
-                            row_buffer[(n * sample_rate as usize / LEN).min(PLOT_X_LEN - 1)] +=
-                                buffer2[n].re / LEN as f32;
+                        for i in 0..LEN {
+                            let j = (i * sample_rate as usize / LEN).min(PLOT_X_LEN - 1);
+
+                            row_buffer[j] += buffer2[i].re / LEN as f32;
+
+                            if j != PLOT_X_LEN - 1 && row_buffer[j] > row_buffer[row_max] {
+                                row_max = j
+                            }
                         }
 
+                        peak_freq.push(row_max);
                         sound_map.push(row_buffer.to_vec());
-                        row_nr += 1;
                     }
 
                     samples += 1;
-                    if row_nr > 4000 {
-                        break 'outer;
-                    }
                 }
             }
             Err(Error::Eof) => break 'outer,
@@ -61,11 +65,21 @@ fn main() {
         }
     }
 
+    println!("Saving peak frquencies");
+    writeln!(
+        &mut File::create(format!("{input_file}.csv")).unwrap(),
+        "freq,\n{}",
+        peak_freq
+            .iter()
+            .map(|f| format!("{}", f))
+            .collect::<Vec<_>>()
+            .join(",\n")
+    )
+    .unwrap();
+
     println!("Generating plot");
 
-    use plotly::common::{ColorScale, ColorScalePalette, Title};
-    use plotly::contour::Contours;
-    use plotly::{Contour, HeatMap, Layout, Plot};
+    use plotly::{HeatMap, Plot};
 
     let trace = HeatMap::new_z(sound_map);
     let mut plot = Plot::new();
@@ -79,8 +93,8 @@ fn main() {
         plot.save(
             format!("plots/{input_file}.png"),
             plotly::ImageFormat::PNG,
-            1920,
             1080,
+            1920,
             1.0,
         );
     }

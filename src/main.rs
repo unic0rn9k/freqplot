@@ -61,7 +61,7 @@ fn main() {
                 }
             }
             Err(Error::Eof) => break 'outer,
-            Err(e) => panic!("{:?}", e),
+            Err(e) => panic!("Error while reading audio: {:?}", e),
         }
     }
 

@@ -3,6 +3,8 @@
 This is done by Fourier transforming wave forms represented as vectors of intensity over time.
 
 ## Example plot
+[Plot of small melody in 8k.](https://raw.githubusercontent.com/unic0rn9k/freqplot/master/plots/skive.mp3.png)
+
 Plot of 440hz tone and an almost 440hz tone, recorded with real equipment.
 ![](plots/440hz_ekstra/3.png)
 

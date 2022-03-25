@@ -4,7 +4,7 @@ use std::io::Write;
 use std::{env::var, fs::File, mem::transmute};
 
 const LEN: usize = 2usize.pow(14);
-const PLOT_X_LEN: usize = 1000;
+const PLOT_X_LEN: usize = 2000;
 
 fn main() {
     let input_file =
@@ -34,7 +34,7 @@ fn main() {
                     buffer[samples % LEN] = re(data[data_idx] as f32);
                     buffer[samples % LEN + LEN] = re(data[data_idx] as f32);
 
-                    if samples / LEN >= 2 && samples % 10 == 0 {
+                    if samples / LEN >= 2 && samples % 80 == 0 {
                         let sample: &[Complex<f32>; LEN] =
                             unsafe { transmute(&buffer[samples % LEN]) };
 
@@ -46,7 +46,7 @@ fn main() {
                         for i in 0..LEN {
                             let j = (i * sample_rate as usize / LEN).min(PLOT_X_LEN - 1);
 
-                            row_buffer[j] += buffer2[i].re / LEN as f32;
+                            row_buffer[j] += buffer2[i].im / LEN as f32;
 
                             if j != PLOT_X_LEN - 1 && row_buffer[j] > row_buffer[row_max] {
                                 row_max = j
@@ -93,8 +93,8 @@ fn main() {
         plot.save(
             format!("plots/{input_file}.png"),
             plotly::ImageFormat::PNG,
-            1080,
-            1920,
+            4320,
+            7680,
             1.0,
         );
     }

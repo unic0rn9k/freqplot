@@ -5,8 +5,8 @@ using DataFrames
 using Statistics
 using Printf
 
-for path in filter(x -> occursin(r".*\.csv$", x), readdir("data/fløjte"))
-    tone = CSV.read("./data/fløjte/" * path, DataFrame)
+for path in filter(x -> occursin(r".*\.csv$", x), readdir("data/flute"))
+    tone = CSV.read("./data/flute/" * path, DataFrame)
 
     println("----------------------------------------------")
     println(path)

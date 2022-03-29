@@ -1,5 +1,7 @@
 #!/usr/bin/env fish
 
+cargo b --release
+
 set -x JOBS 4
 
 echo "Computing fourier transforms on $JOBS threads..."

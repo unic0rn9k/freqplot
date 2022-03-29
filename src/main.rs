@@ -3,8 +3,37 @@ use sfft::*;
 use std::io::Write;
 use std::{env::var, fs::File, mem::transmute};
 
-const LEN: usize = 2usize.pow(14);
-const PLOT_X_LEN: usize = 2000;
+const SAMPLE_LEN: usize = 2usize.pow(14);
+const PLOT_WIDTH: usize = 3000;
+
+/*
+struct RingBuffer<T, const LEN: usize> {
+    buffer: [T; LEN],
+    index: usize,
+}
+
+impl<T, const LEN: usize> RingBuffer<T, LEN> {
+    fn new(buffer: [T; LEN]) -> Self {
+        RingBuffer { buffer, index: 0 }
+    }
+
+    fn push(&mut self, v: T) {
+        if self.index > LEN {
+            self.index = 0
+        }
+        self.buffer[self.index] = v;
+        self.index += 1
+    }
+
+    fn pop(&mut self) -> T {
+        if self.index == 0 {
+            self.index = LEN
+        }
+        let res = self.buffer[self.index];
+        self.index -= 1;
+        res
+    }
+}*/
 
 fn main() {
     let input_file =
@@ -14,7 +43,7 @@ fn main() {
 
     let mut samples = 0;
 
-    let mut buffer = vec![re(0f32); LEN * 2];
+    let mut buffer = vec![re(0f32); SAMPLE_LEN * 2];
     let mut sound_map: Vec<Vec<f32>> = Vec::new();
     let mut peak_freq = vec![];
 
@@ -31,24 +60,25 @@ fn main() {
                 assert_eq!(channels, 1);
 
                 for data_idx in 0..data.len() {
-                    buffer[samples % LEN] = re(data[data_idx] as f32);
-                    buffer[samples % LEN + LEN] = re(data[data_idx] as f32);
+                    buffer[samples % SAMPLE_LEN] = re(data[data_idx] as f32);
+                    buffer[samples % SAMPLE_LEN + SAMPLE_LEN] = re(data[data_idx] as f32);
 
-                    if samples / LEN >= 2 && samples % 80 == 0 {
-                        let sample: &[Complex<f32>; LEN] =
-                            unsafe { transmute(&buffer[samples % LEN]) };
+                    if samples / SAMPLE_LEN >= 2 && samples % 40 == 0 {
+                        let sample: &[Complex<f32>; SAMPLE_LEN] =
+                            unsafe { transmute(&buffer[samples % SAMPLE_LEN]) };
 
                         let buffer2 = fft(sample);
 
-                        let mut row_buffer = [0.; PLOT_X_LEN];
+                        let mut row_buffer = [0.; PLOT_WIDTH];
                         let mut row_max = 0;
 
-                        for i in 0..LEN {
-                            let j = (i * sample_rate as usize / LEN).min(PLOT_X_LEN - 1);
+                        for i in 0..SAMPLE_LEN {
+                            let j = (i * sample_rate as usize / SAMPLE_LEN).min(PLOT_WIDTH - 1);
 
-                            row_buffer[j] += buffer2[i].im / LEN as f32;
+                            row_buffer[j] += buffer2[i].re;
+                            //row_buffer[(j + 1).min(PLOT_WIDTH - 1)] -= buffer2[i].re;
 
-                            if j != PLOT_X_LEN - 1 && row_buffer[j] > row_buffer[row_max] {
+                            if j != PLOT_WIDTH - 1 && row_buffer[j] > row_buffer[row_max] {
                                 row_max = j
                             }
                         }
@@ -65,7 +95,7 @@ fn main() {
         }
     }
 
-    println!("Saving peak frquencies");
+    println!("Saving peak frequencies");
     writeln!(
         &mut File::create(format!("{input_file}.csv")).unwrap(),
         "freq,\n{}",
@@ -81,6 +111,7 @@ fn main() {
 
     use plotly::{HeatMap, Plot};
 
+    let plot_height = sound_map.len() + 50;
     let trace = HeatMap::new_z(sound_map);
     let mut plot = Plot::new();
     plot.add_trace(trace);
@@ -93,9 +124,10 @@ fn main() {
         plot.save(
             format!("plots/{input_file}.png"),
             plotly::ImageFormat::PNG,
-            4320,
-            7680,
+            2160,
+            plot_height,
             1.0,
         );
     }
+    println!("Done!");
 }
